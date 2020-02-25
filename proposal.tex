@@ -64,7 +64,7 @@ Our improvements upon the \texttt{.csv} format will allow for users and programs
 The end goal is to expedite communication between programs and disparate systems.
 
 \indent{}
-This document will outline the proposal of a new format called \Gls{Binary Separated Value} (\texttt{.bsvx}).
+This document will outline the proposal of a new format called Binary Separated Value (\texttt{.bsvx}).
 This format of data will be delimited with byte markers which begin each field telling the library what kind of data will be in the field and how long it will be.
 Instead of using a character delimitation in plaintext form, using a byte marker solves the issue of having commas in string fields, avoiding parsing errors.
 One drawback of this style of implementation is the inability to parse and edit \texttt{.bsvx} files through a text editor, but this issue is remedied through the BSVX LibreOffice Calc Extension.
