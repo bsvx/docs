@@ -1,7 +1,7 @@
 \documentclass[10pt]{article}
 
 \usepackage[margin=1in]{geometry}
-\usepackage{glossaries,graphicx,hyperref}
+\usepackage{float,glossaries,graphicx,hyperref}
 
 \makenoidxglossaries
 
@@ -21,6 +21,12 @@
 {
     name=.csv,
     description={Comma-separated values file format often used for databases and spreadsheets}
+}
+
+\newglossaryentry{.tsv}
+{
+    name=.tsv,
+    description={Tab-separated values file format used for databases and spreadsheets}
 }
 
 \newglossaryentry{Comma delimiter}
@@ -76,7 +82,7 @@ Calc is a program provided in the LibreOffice suite, and provides similar functi
 The proposed BSVX Calc Extension will give Calc users the ability to read data from a \texttt{.bsvx} file, and export their spreadsheets in \texttt{.bsvx} format.
 This will also allow users the functionality of converting a \texttt{.csv} file into a \texttt{.bsvx} file through the Calc program.
 
-\section*{BSVX Approach}
+\section*{BSVX File Type Specification}
 
 Each \texttt{.bsvx} file contains a series of rows of headers or records.
 Each row begins with a byte marker denoting the type (i.e. header or record) and the number of fields within that row.
@@ -95,7 +101,7 @@ All numbers are stored in little endian order.
 \indent{}
 An abstract example of a \texttt{.bsvx} file row (header or record) looks like this:
 
-\begin{table}[htp]
+\begin{table}[H]
 \centering
 \begin{tabular}{|c|c|c|c|c|c|c|}
 \hline
@@ -107,14 +113,14 @@ Field & str &  & int &  & Float &  \\ \hline
 \end{table}
 
 \indent{}
-The following chart will be used to implement each type of supported data in its own class and denote the bit range each field will be denoted by, ranging from 0 to 255.
+The following table will be used to implement each type of supported data in its own class and denote the bit range each field will be denoted by, ranging from 0 to 255.
 The first column gives the parser crucial context: what type of data will follow the byte marker, and further, which \textit{variant} on that type it will be.
 For example, the small integer (int) type is represented by numbers in the range 136-143. 
 A 2-byte small int is indicated by 138, 139 is for a 3 byte int, 140 denotes a 4 byte int, etc.
 The second column illustrates how the range of values for a given type is affected by the magnitude of its offset i.e. for a small int, the second column entry is 136 + [0, 7].
 The third column establishes the types of data that are supported and the fourth provides a brief description of each.
 
-\begin{table}[htp]
+\begin{table}[H]
 \centering
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{|c|c|c|l|}
@@ -134,49 +140,40 @@ The third column establishes the types of data that are supported and the fourth
 216-255 &  & Reserved & For future use \\ \hline
 \end{tabular}%
 }
-\caption{Data types supported by the \texttt{.bsvx} file specification.}
+\caption{Data types supported by the BSVX file type specification.}
 \label{tab:bsvxApproach_dataTypes}
 \end{table}
 
 \section*{Deliverables}
 
-The proposed deliverables for this new format include a LibreOffice Calc extension to read from and write to \texttt{.bsvx} files, and a python library for doing the same.
+The proposed deliverables for this new format include a LibreOffice Calc extension to read from and write to \texttt{.bsvx} files, and a Python library for doing the same.
 This extension should be capable of converting between \texttt{.csv} and \texttt{.bsvx} without loss or adulteration of the information stored in the files.
 Similar libraries for languages such as Java, C++ and C\#, or JavaScript are left as stretch goals.
 
 \indent{}
 The BSVX Calc Extension will allow spreadsheets to be saved to and read from \texttt{.bsvx} files.
-Shown below are figures illustrating the means for user interaction with such an extension.
+To illustrate the top-most point for user interaction with the BSVX Calc Extension, there is included a series of figures below. 
+\autoref{fig:deliverables_mockupPart1} displays the default toolbar packaged with LibreOffice Calc.
+\autoref{fig:deliverables_mockupPart2} contrasts the differences between the default toolbar and the toolbar with the BSVX Calc Extension enabled.
+It can be seen that only two features are added, in the form of two buttons.
+The proposed left button allows for importing, reading from, a \texttt{.bsvx} file and the proposed right button for exporting, saving to, a \texttt{.bsvx} file.
+Finally, \autoref{fig:deliverables_mockupPart3} provides a glance as to how the toolbar will look with the BSVX Calc Extension enabled.
 
-\begin{figure}[htp]
-\centering
-\includegraphics[width=5in]{figures/dataToBsvx.png}
-\caption{Scope of API and library calls for the BSVX Calc Extension in exporting data to a \texttt{.bsvx} file.}
-\label{fig:deliverables_dataToBsvx}
-\end{figure}
-
-\begin{figure}[htp]
-\centering
-\includegraphics[width=5in]{figures/bsvxToData.png}
-\caption{Scope of API and library calls for the BSVX Calc Extension in importing data from a \texttt{.bsvx} file.}
-\label{fig:deliverables_bsvxToData}
-\end{figure}
-
-\begin{figure}[htp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{figures/mockupPart1.png}
 \caption{LibreOffice Calc's toolbar.}
 \label{fig:deliverables_mockupPart1}
 \end{figure}
 
-\begin{figure}[htp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=4in]{figures/mockupPart2.png}
 \caption{The BSVX Calc Extension will provide two additional buttons for importing and exporting.}
 \label{fig:deliverables_mockupPart2}
 \end{figure}
 
-\begin{figure}[htp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{figures/mockupPart3.png}
 \caption{A mockup of LibreOffice Calc's toolbar with the BSVX Calc Extension enabled.}
@@ -184,23 +181,49 @@ Shown below are figures illustrating the means for user interaction with such an
 \end{figure}
 
 \indent{}
-In most cases, the first row of the spreadsheet will be saved as a header, and subsequent rows will be saved as records.
-When reading, both headers and records will be read the same, but may affect whether a row is included in sorting.
-
-\indent{}
-Our Python library will be similar to the \texttt{.csv} library.
+To talk more about how the BSVX Calc Extension works behind the scenes, it is first necessary to speak about our proposed Python library---\texttt{bsvxpy}.
+As a generality, our Python library will be similar to the \texttt{.csv} library.
 A writer function will be passed a series of fields representing a header row. 
 Subsequent binary values are decoded based on the corresponding type casts provided by the header.
 The library will then extract each of the fields from the dictionary object and output them to the Calc spreadsheet in sequential order.
-The Library will also process nested data structures within the \texttt{.bsvx} file allowing for the recursive encoding/decoding of further dictionary objects.
+The library will also process nested data structures within the \texttt{.bsvx} file allowing for the recursive encoding and decoding of further dictionary objects.
 
 \indent{}
-Advanced options allow for serializing objects directly, accessing their fields rather than first converting the object to a dict and serializing the dict.
+With an understanding of how the \texttt{bsvxpy} Python library functions, we can return to an overview of the BSVX Calc Extension.
+First off, the LibreOffice Calc project allows developers to create extensions using Python, which lets us extend LibreOffice Calc’s functionality to include \texttt{.bsvx} file support using our \texttt{bsvxpy} Python library.
+We will also be using the \texttt{uno} Python library, as it is necessary for any LibreOffice Calc extension development.
 
 \indent{}
-Versions of this library for other languages will provide similar functionality to the Python library and will use reflection to support serializing and deserializing objects directly.
-Added support for reflection allows for the \texttt{.bsvx} filetype to encode more complex data structures and data types not explicitly encoded in the \texttt{.bsvx} specifications.
-Similarly, child objects will be serialized as a blob whose contents are themselves \texttt{.bsvx} files.
+To export data to a \texttt{.bsvx} file, the BSVX Calc Extension will call functions from the \texttt{uno} Python library to read cell data from LibreOffice Calc.
+The \texttt{bsvxpy} Python library will then be used to convert that data into binary separated values.
+Once the data is appropriately converted, it will be written to a file---as named by the user---with the file extension \texttt{.bsvx}.
+\autoref{fig:deliverables_dataToBsvx} depicts the data flow for the exporting feature.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{figures/dataToBsvx.png}
+\caption{Scope of API and library calls for the BSVX Calc Extension in exporting data to a \texttt{.bsvx} file.}
+\label{fig:deliverables_dataToBsvx}
+\end{figure}
+
+\indent{}
+The importing feature works the same way, but in reverse.
+The user selects a \texttt{.bsvx} file to import data from, and the BSVX Calc Extension reads data from that file, using \texttt{bsvxpy} and \texttt{uno} to translate it from binary separated value data to cell data that LibreOffice Calc can read.
+The data flow for the importing feature is represented by \autoref{fig:deliverables_bsvxToData}.
+    
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{figures/bsvxToData.png}
+\caption{Scope of API and library calls for the BSVX Calc Extension in importing data from a \texttt{.bsvx} file.}
+\label{fig:deliverables_bsvxToData}
+\end{figure}
+
+\indent{}
+This functionality also allows the user to convert from \texttt{.csv} to \texttt{.bsvx}.
+If the user chooses to import a \texttt{.csv} file into LibreOffice Calc, and exports that file to a \texttt{.bsvx} file, that same data will be available in both files.
+Likewise, if the user chooses to import a \texttt{.bsvx} file and export that file to a \texttt{.csv} file, that same data will be available.
+These changes do not significantly affect the overall architecture of LibreOffice Calc.
+The same base functionality of LibreOffice Calc is still provided to the user once this extension is installed, with the addition of importing and exporting features for \texttt{.bsvx} file formats.
 
 \section*{Approach}
 
@@ -221,7 +244,7 @@ Costs are to be kept minimal, if nonexistent, as our developers are being paid i
 
 \section*{Schedule and Milestones}
 
-\begin{table}[htp]
+\begin{table}[H]
 \centering
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{|l|l|}
@@ -264,6 +287,7 @@ Another challenge is that the framework/API for both LibreOffice and Calc is unf
 \glsadd{Binary Separated Value}
 \glsadd{.bsvx}
 \glsadd{.csv}
+\glsadd{.tsv}
 \glsadd{Comma delimiter}
 \glsadd{Serialization}
 \glsadd{Deserialization}
