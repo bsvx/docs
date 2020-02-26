@@ -188,6 +188,14 @@ Subsequent binary values are decoded based on the corresponding type casts provi
 The library will then extract each of the fields from the dictionary object and output them to the Calc spreadsheet in sequential order.
 The library will also process nested data structures within the \texttt{.bsvx} file allowing for the recursive encoding and decoding of further dictionary objects.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/bsvxpy.png}
+\caption{UML diagram outlining the classes and statstructures used in bsvxpy}
+\label{fig:bsvxpy_architecture}
+\end{figure}
+
+
 \indent{}
 With an understanding of how the \texttt{bsvxpy} Python library functions, we can return to an overview of the BSVX Calc Extension.
 First off, the LibreOffice Calc project allows developers to create extensions using Python, which lets us extend LibreOffice Calc’s functionality to include \texttt{.bsvx} file support using our \texttt{bsvxpy} Python library.
