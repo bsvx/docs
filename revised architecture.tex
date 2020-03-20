@@ -235,7 +235,6 @@ Once the data is appropriately converted, it will be written to a file---as name
 \caption{Scope of API and library calls for the BSVX Calc Extension in exporting data to a \texttt{.bsvx} file.}
 \label{fig:deliverables_dataToBsvx}
 \end{figure}
-\newpage
 
 \indent{}
 The importing feature works the same way, but in reverse.
@@ -272,27 +271,28 @@ Some loss of formatting and style is acceptable as long as the order of the valu
 The project is expected to take approximately two months to complete, with production wrapping in late April 2020.
 Costs are to be kept minimal, if nonexistent, as our developers are being paid in “experience.”
 
+\subsection*{Active Developement}
+\indent{}
+It should be noted that development of the \texttt{bsvxpy} library will require the use of a python virtual environment to ensure the user does not install the incomplete module on their default python environment.
+Specifics regarding the initialization and launch of a python virtual environment can be found in the README portion of the \texttt{bsvxpy} github.
+
 \section*{Schedule and Milestones}
 
 \begin{table}[H]
 \centering
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{|l|l|}
+\begin{tabular}{|p{80pt}|p{375pt}|}
 \hline
 \textbf{Date} & \textbf{Goal} \\ \hline
 February 19, 2020 & Finish background research, draft Object and Interaction UML diagrams \\ \hline
-February 26, 2020 & Finalize list of required development tools, testing environment, lock LibreOffice version for internal development \\
- & Decompose development steps and and assign tasks \\ \hline
+February 26, 2020 & Finalize list of required development tools, testing environment, lock LibreOffice version for internal development. Decompose development steps and and assign tasks \\ \hline
 March 4, 2020 & Finalize and submit our User Manual \\ \hline
-March 6, 2020: Midterm Milesome & Draft LibreOffice Calc interface \\
- & Draft .bsvx interpreter with the expected functionality of converting .csv to .bsvx file type (one way) \\ \hline
-March 18, 2020 & Finalize Calc interface \\
- & Draft .bsvx import functionality (.bsvx to .csv file type) \\ \hline
+March 6, 2020: Midterm Milestone & Draft LibreOffice Calc interface.
+Draft .bsvx interpreter with the expected functionality of converting .csv to .bsvx file type (one way) \\ \hline
+March 18, 2020 & Finalize Calc interface. Draft .bsvx import functionality (.bsvx to .csv file type) \\ \hline
 April 1, 2020 & Merge Calc interface and .bsvx interpreter with stretch goal of eliminating .csv middle-step \\ \hline
 April 17, 2020 & Draft Final Report of findings \\ \hline
 April 27, 2020: Final Milestone & Submit Final Report and Present findings to class \\ \hline
-\end{tabular}%
-}
+\end{tabular}
 \caption{Purported project schedule.}
 \label{tab:approach_schedule}
 \end{table}
