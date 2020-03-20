@@ -115,6 +115,20 @@ Field & str &  & int &  & Float &  \\ \hline
 \end{table}
 
 \indent{}
+The same example of a \texttt{.bsvx} file row (header or record) represented in hexadecimal:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|c|}
+\hline
+0xAB & 0x03 & 0x464F4F & 0x91 & 0x1F4 & 0x9C & 0x400395851EB851EB851EB851EB851EB8 \\
+Field & str &  & int &  & Float &  \\ \hline
+\end{tabular}
+\caption{An example of a \texttt{.bsvx} file row in hex values.}
+\label{tab:bsvxApproach_example in hexadecimal}
+\end{table}
+
+\indent{}
 The following table will be used to implement each type of supported data in its own class and denote the bit range each field will be denoted by, ranging from 0 to 255.
 The first column gives the parser crucial context: what type of data will follow the byte marker, and further, which \textit{variant} on that type it will be.
 For example, the small integer (int) type is represented by numbers in the range 136-143. 
@@ -202,6 +216,12 @@ The library will also process nested data structures within the \texttt{.bsvx} f
 With an understanding of how the \texttt{bsvxpy} Python library functions, we can return to an overview of the BSVX Calc Extension.
 First off, the LibreOffice Calc project allows developers to create extensions using Python, which lets us extend LibreOffice Calc’s functionality to include \texttt{.bsvx} file support using our \texttt{bsvxpy} Python library.
 We will also be using the \texttt{uno} Python library, as it is necessary for any LibreOffice Calc extension development.
+
+\indent{}
+A novel problem with strongly typed encoding is the inability to handle undefined data types such as graphs or algorithms that are often used in spreadsheet applications.
+The\texttt{ .bsvx} file format manages unknown data types with a catch-all data type: Blob, which acts as a polymorphic object with which to store raw binary data exported from the spreadsheet or csv file.
+By relying on the raw binary for unknown data types, \texttt{bsvxpy} can accommodate proprietary encoding s associated with any 3rd part application; however,
+this introduces the risk of \texttt{.bsvx} files being limited to one spreadsheet application when using Blob data types, as the 3rd party application may use internal encoding which are unknown to other programs.
 
 \indent{}
 To export data to a \texttt{.bsvx} file, the BSVX Calc Extension will call functions from the \texttt{uno} Python library to read cell data from LibreOffice Calc.
