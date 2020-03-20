@@ -63,7 +63,7 @@
 \section*{Motivation}
 
 The use of databases as a means for storing information has become ubiquitous in every field concerning data.
-One of the most common methods for analyzing sets of data from databases is to export it to a \texttt{.csv} file in order to manipulate the data via a spreadsheet program or language libraries.
+One of the most common methods for analyzing sets of data from databases is to export it to a \texttt{.csv} (comma separated value) file in order to manipulate the data via a spreadsheet program or language libraries.
 But despite all its draws, the \texttt{.csv} format has some significant drawbacks as well.
 The format is too bulky and inefficient for many applications, and it relies on a comma delimiter to separate data which can be problematic \cite{Coleman2011}.
 Our improvements upon the \texttt{.csv} format will allow for users and programs to more efficiently store and utilize complex data.
@@ -71,14 +71,16 @@ The end goal is to expedite communication between programs and disparate systems
 
 \indent{}
 This document will outline the proposal of a new format called Binary Separated Value (\texttt{.bsvx}).
+This is not to be confused with a  (\texttt{.bsv}) file, which is a BASIC BSave Graphics file.
+The tailing \texttt{x} was chosen for convenience as it makes the name of our file format, \texttt{.bsvx},  wholly unique.
 This format of data will be delimited with byte markers which begin each field telling the library what kind of data will be in the field and how long it will be.
 Instead of using a character delimitation in plaintext form, using a byte marker solves the issue of having commas in string fields, avoiding parsing errors.
 One drawback of this style of implementation is the inability to parse and edit \texttt{.bsvx} files through a text editor, but this issue is remedied through the BSVX LibreOffice Calc Extension.
 The Binary Separated Value format will be processed through a proprietary Python library.
 
 \indent{}
-LibreOffice is a free to use, open-source file editing platform similar to Microsoft Office.
-Calc is a program provided in the LibreOffice suite, and provides similar functionality to Microsoft’s Excel program \cite{Guthrie2012}.
+\href{https://www.libreoffice.org/discover/libreoffice/}{LibreOffice} is a free to use, open-source file editing platform similar to Microsoft Office.
+\href{https://www.libreoffice.org/discover/calc/}{Calc} is a program provided in the LibreOffice suite, and provides similar functionality to Microsoft’s Excel program \cite{Guthrie2012}.
 The proposed BSVX Calc Extension will give Calc users the ability to read data from a \texttt{.bsvx} file, and export their spreadsheets in \texttt{.bsvx} format.
 This will also allow users the functionality of converting a \texttt{.csv} file into a \texttt{.bsvx} file through the Calc program.
 
@@ -93,7 +95,7 @@ Each row does not have to be the same length, the data can be jagged and parsers
 
 \indent{}
 At any time, the parser knows how many bytes it needs to read.
-There will never be an instance where it needs to read bytes until it sees a particular byte (like in the case of \texttt{.csv} or \texttt{.tsv} looking for a comma or tab to end on).
+There will never be an instance where it needs to read bytes until it sees a particular character (like in the case of \texttt{.csv} or \texttt{.tsv} looking for a comma or tab to end on).
 Strings will neither need end marks nor escape characters, and will be stored in UTF-8 format.
 The byte marker for strings denotes the number of bytes read, not the number of characters of the string itself.
 All numbers are stored in little endian order.
@@ -245,10 +247,9 @@ Lastly, we’ll attempt to optimize memory and computational efficiency to impro
 One important test of the \texttt{.bsvx} format and its corresponding extension will be its capacity to maintain full integrity of the data after conversion to and from \texttt{.csv} format.
 Our deliverable should enable a user with minimal experience in LibreOffice and some experience with spreadsheets to perform these conversions without loss of data or corruption of its ordering.
 Some loss of formatting and style is acceptable as long as the order of the values and the values themselves are maintained.
-The point of \texttt{.bsvx} is not aesthetics, it is purely function.
 
 \indent{}
-The project is expected to approximately two months to complete, with production wrapping in late April 2020.
+The project is expected to take approximately two months to complete, with production wrapping in late April 2020.
 Costs are to be kept minimal, if nonexistent, as our developers are being paid in “experience.”
 
 \section*{Schedule and Milestones}
@@ -289,7 +290,7 @@ Properly following the specification will ensure consistency and prevent this fr
 \indent{}
 One challenge fundamental to the \texttt{.bsvx} format itself is deciding how to handle blob objects.
 It isn’t always clear what type of data they should be deserialized as.
-Perhaps Calc has a method to interpret unknown fields upon reading the file; more research will be done on this.
+Calc may contain methods to interpret unknown fields upon reading the file but more research on this is necessary.
 Another challenge is that the framework/API for both LibreOffice and Calc is unfamiliar, and it will take some time to learn.
 
 \clearpage
