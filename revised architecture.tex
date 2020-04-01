@@ -55,48 +55,49 @@
 
 \begin{document}
 
-\title{Binary Separated Value\\Architecture}
+\title{Binary Separated Value}
 \author{B. Bean, N. Mezher, J. Summers \& D. Toomey\\University of Massachusetts Lowell | Software Engineering II\\Prof. James Daly}
-\date{February 2020}
+\date{April 2020}
 \maketitle
 
 \section*{Motivation}
 
 The use of databases as a means for storing information has become ubiquitous in every field concerning data.
-One of the most common methods for analyzing sets of data from databases is to export it to a \texttt{.csv} (comma separated value) file in order to manipulate the data via a spreadsheet program or language libraries.
+One of the most common methods for analyzing sets of data from databases is to export it to a \texttt{.csv} (comma separated value) file format in order to manipulate the data via a spreadsheet program or language libraries.
 But despite all its draws, the \texttt{.csv} format has some significant drawbacks as well.
 The format is too bulky and inefficient for many applications, and it relies on a comma delimiter to separate data which can be problematic \cite{Coleman2011}.
-Our improvements upon the \texttt{.csv} format will allow for users and programs to more efficiently store and utilize complex data.
+Our improvements upon the \texttt{.csv} format allow for users and programs to more efficiently store and utilize complex data.
 The end goal is to expedite communication between programs and disparate systems.
 
 \indent{}
-This document will outline the proposal of a new format called Binary Separated Value (\texttt{.bsvx}).
-This is not to be confused with a  (\texttt{.bsv}) file, which is a BASIC BSave Graphics file.
-The tailing \texttt{x} was chosen for convenience as it makes the name of our file format, \texttt{.bsvx},  wholly unique.
-This format of data will be delimited with byte markers which begin each field telling the library what kind of data will be in the field and how long it will be.
-Instead of using a character delimitation in plaintext form, using a byte marker solves the issue of having commas in string fields, avoiding parsing errors.
-One drawback of this style of implementation is the inability to parse and edit \texttt{.bsvx} files through a text editor, but this issue is remedied through the BSVX LibreOffice Calc Extension.
-The Binary Separated Value format will be processed through a proprietary Python library.
+This document first outlines a new file format termed Binary Separated Value (BSVX) and with the extension \texttt{.bsvx}.
+This is not to be confused with the \texttt{.bsv} file format, which is a BASIC BSave Graphics file.
+The tailing \texttt{x} was chosen for convenience as it makes the name of our format, \texttt{.bsvx}, wholly unique.
+This format of data is delimited with byte markers which begin each field telling the library what kind of data will be in the field and how long it will be.
+Using byte markers, instead of plaintext character delimiters, solves a key issue with the \texttt{.csv} format---strings including commas do not prematurely end a field.
+The Binary Separated Value format is processed through a proprietary Python library.
 
 \indent{}
+One drawback of this style of implementation is the inability to parse and edit \texttt{.bsvx} files through a text editor.
+However, this issue is remedied through the BSVX LibreOffice Calc Extension.
 \href{https://www.libreoffice.org/discover/libreoffice/}{LibreOffice} is a free to use, open-source file editing platform similar to Microsoft Office.
 \href{https://www.libreoffice.org/discover/calc/}{Calc} is a program provided in the LibreOffice suite, and provides similar functionality to Microsoft’s Excel program \cite{Guthrie2012}.
-The proposed BSVX Calc Extension will give Calc users the ability to read data from a \texttt{.bsvx} file, and export their spreadsheets in \texttt{.bsvx} format.
-This will also allow users the functionality of converting a \texttt{.csv} file into a \texttt{.bsvx} file through the Calc program.
+The BSVX LibreOffice Calc Extension gives Calc users the ability to read data from \texttt{.bsvx} files and export their spreadsheets to \texttt{.bsvx} files.
+Users also have the ability to import, then convert \texttt{.csv} files into \texttt{.bsvx} files through the BSVX LibreOffice Calc Extension.
 
-\section*{BSVX File Type Specification}
+\section*{BSVX File Format Specification}
 
 Each \texttt{.bsvx} file contains a series of rows of headers or records.
 Each row begins with a byte marker denoting the type (i.e. header or record) and the number of fields within that row.
 Following the first byte marker of a row is a series of fields, each made up of two parts: a byte marker denoting the type and size of the data stored within the field, and the data itself.
-Some initial markers will indicate that the size of the data will be given in subsequent bytes.
+Some initial markers indicate that the size of the data is given in subsequent bytes.
 Once the length \textit{n} is determined, those \textit{n} bytes can be interpreted to match the field byte marker.
-Each row does not have to be the same length, the data can be jagged and parsers will only read as much data as is denoted by the first byte marker of each row. 
+Each row does not have to be the same length, the data can be jagged and parsers read as much data as is denoted by the first byte marker of each row. 
 
 \indent{}
 At any time, the parser knows how many bytes it needs to read.
-There will never be an instance where it needs to read bytes until it sees a particular character (like in the case of \texttt{.csv} or \texttt{.tsv} looking for a comma or tab to end on).
-Strings will neither need end marks nor escape characters, and will be stored in UTF-8 format.
+There is never an instance where the parser needs to read bytes until it sees a particular character (as opposed to \texttt{.csv} or \texttt{.tsv} parsers, which look for commas or tabs respectively).
+Strings need neither end marks nor escape characters, and are stored in the UTF-8 format.
 The byte marker for strings denotes the number of bytes read, not the number of characters of the string itself.
 All numbers are stored in little endian order.
 
@@ -121,8 +122,8 @@ The same example of a \texttt{.bsvx} file row (header or record) represented in 
 \centering
 \begin{tabular}{|c|c|c|c|c|c|c|}
 \hline
-0xAB & 0x03 & 0x464F4F & 0x91 & 0x1F4 & 0x9C & 0x400395851EB851EB851EB851EB851EB8 \\
-Field & str &  & int &  & Float &  \\ \hline
+0xAB & 0x03 & 0x464F4F & 0x91 & 0x01F4 & 0x9C & 0x400395851EB851EB851EB851EB851EB8 \\
+Record & str &  & int &  & Float &  \\ \hline
 \end{tabular}
 \caption{An example of a \texttt{.bsvx} file row in hex values.}
 \label{tab:bsvxApproach_example in hexadecimal}
@@ -145,7 +146,7 @@ The third column establishes the types of data that are supported and the fourth
 0 &  & Blank & Possible implementation: NULL or ‘empty string’ \\ \hline
 1-127 & 1-127 & Short str & UTF-8 Encoded string of byte length 1-127 \\ \hline
 128-135 & 128 + {[}0,7{]} & Long str & 1-8 bytes giving the length of a str, followed by said str \\ \hline
-136-143 & 136 + {[}0,7{]} & Small int & An integer in the range of 0-7 bytes \\ \hline
+136-143 & 136 + {[}0,7{]} & Short int & An integer in the range of 0-7 bytes \\ \hline
 144-151 & 144 + {[}0,7{]} & Long int & A zig-zag encoded integer using 1-8 bytes \\ \hline
 152-159 & 152 + {[}0,7{]} & Float & IEEE-754 format float: 0 = half precision, 1 = single, 2 = double, 3 = triple \\ \hline
 160-167 & 160 + {[}0,7{]} & Blob & 1-8 bytes giving the length of binary data in bytes, followed by said data \\ \hline
