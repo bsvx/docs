@@ -287,7 +287,7 @@ Lastly, the \href{https://github.com/bsvx/docs}{\texttt{docs} repository} contai
 \indent{}
 To further isolate BSVX, the development of the \texttt{bsvxpy} Python library required the use of a Python virtual environment.
 This ensured that the user did not install the incomplete module on their default Python environment.
-Specifics regarding the initialization and launch of a Python virtual environment, within the context of this project, can be found in the README portion of the \texttt{bsvxpy} repository.
+Specifics regarding the initialization and launch of a Python virtual environment, within the context of this project, can be found in the README portion of the \href{https://github.com/bsvx/bsvxpy}{\texttt{bsvxpy} repository}.
 
 \indent{}
 To ensure correctness, to the best of the BSVX developers, Travis-CI was utilized.
@@ -306,17 +306,14 @@ This continuous integration process made development safe and incremental.
 \begin{tabular}{|p{80pt}|p{375pt}|}
 \hline
 \textbf{Date} & \textbf{Goal} \\ \hline
-February 19, 2020 & Finish background research, draft Object and Interaction UML diagrams \\ \hline
-February 26, 2020 & Finalize list of required development tools, testing environment, lock LibreOffice version for internal development. Decompose development steps and and assign tasks \\ \hline
-March 4, 2020 & Finalize and submit our User Manual \\ \hline
-March 6, 2020: Midterm Milestone & Draft LibreOffice Calc interface.
-Draft .bsvx interpreter with the expected functionality of converting .csv to .bsvx file type (one way) \\ \hline
-March 18, 2020 & Finalize Calc interface. Draft .bsvx import functionality (.bsvx to .csv file type) \\ \hline
-April 1, 2020 & Merge Calc interface and .bsvx interpreter with stretch goal of eliminating .csv middle-step \\ \hline
-April 17, 2020 & Draft Final Report of findings \\ \hline
-April 27, 2020: Final Milestone & Submit Final Report and Present findings to class \\ \hline
+February 14, 2020 & Finish initial background research, Draft BSV Proposal deliverable. \\ \hline
+February 26, 2020 & Finalize project's architecture, draft Project Architecture deliverable\\ \hline
+March 4, 2020 & \textbf{Midterm Milestone:} Present progress and evaluate stretch goals \\ \hline
+March 18, 2020 & Implement csv/bsvx backend\\ \hline
+April 1, 2020 & Draft the Initial Results deliverable \\ \hline
+April 27, 2020& \textbf{Final Milestone:} Submit Final Report and Present findings to class \\ \hline
 \end{tabular}
-\caption{Purported project schedule.}
+\caption{A schedule of our project's events.}
 \label{tab:approach_schedule}
 \end{table}
 
@@ -339,7 +336,36 @@ Another challenge was that the framework/API for both LibreOffice and LibreOffic
 
 \section*{Results}
 
-Filler text for now.
+In diagnosing the successfulness of our project and of BSVX's subcomponents themselves, we created a script that generates a number of key figures.
+This script can be found in the scripts folder of our \href{https://github.com/bsvx/docs}{\texttt{docs} repository} along with usage instructions in the form of a README.
+We offer this means of figure self-generation such that it is clear and self-provable that all figures in this document are fair.
+
+\indent{}
+An aspect integral to BSVX is the compression of information attained through storing fields in hexadecimal.
+In comparing relative sizes of equivalent \texttt{.csv} and \texttt{.bsvx} files, it is demonstrably clear that \texttt{.bsvx} files are smaller in file weight.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{scripts/figures/1.png}
+\caption{A simplified version of a graphic that will be in the final version of our report.}
+\label{fig:results_1}
+\end{figure}
+
+\indent{}
+Comma delimiter issues are another problem BSVX sought to solve.
+Displayed below is a graph of expected versus actual fields for equivalent \texttt{.csv} and \texttt{.bsvx} files.
+\texttt{.bsvx} files match the expected number of fields, whereas \texttt{.csv} files decidedly do not.
+In fact, \texttt{.csv} files develop an increasingly larger margin of error with larger file sizes.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{scripts/figures/2.png}
+\caption{A simplified version of a graphic that will be in the final version of our report.}
+\label{fig:results_2}
+\end{figure}
+
+\indent{}
+From here we can see that the two main problems with \texttt{.csv} files, as previously noted, have been solved with our implementation of the BSVX file format specification.
 
 \clearpage
 \glsadd{Binary Separated Value}
