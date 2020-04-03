@@ -11,4 +11,5 @@ Prerequisites:
   - `pip install --user matplotlib`
 
 All you have to do to generate all of BSVX's figures is run the script called "generate_figures.py".
+This script is located in the "scripts" directory of this repository.
 This can be accomplished through `python generate_figures.py`.
