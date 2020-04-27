@@ -1,4 +1,5 @@
 *.*
+!*.bsvx
 !*.tex
 !*.pdf
 !*.png
