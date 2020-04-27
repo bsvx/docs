@@ -4,6 +4,9 @@ This repository is for the BSVX team's ongoing specification document.
 
 ### Figure Generation
 Prerequisites:
+- The [bsvxpy library](https://github.com/bsvx/bsvxpy) is cloned to your local machine in the parent directory of this repo
+  - `pip install ..\bsvxpy\` on Windows
+  - `pip install ../bsvxpy/` on Linux/OS X
 - Python 3
 - Python numpy package
   - `pip install --user numpy`
