@@ -1,0 +1,440 @@
+\documentclass[10pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{float,glossaries,graphicx,hyperref}
+
+\makenoidxglossaries
+
+\newglossaryentry{Binary Separated Value}
+{
+    name=Binary Separated Value,
+    description={The file format associated with the encoding protocols laid out in this document}
+}
+
+\newglossaryentry{.bsvx}
+{
+    name=.bsvx,
+    description={The file extension associated with the Binary Separated Value file format}
+}
+
+\newglossaryentry{.csv}
+{
+    name=.csv,
+    description={Comma-separated values file format often used for databases and spreadsheets}
+}
+
+\newglossaryentry{.tsv}
+{
+    name=.tsv,
+    description={Tab-separated values file format used for databases and spreadsheets}
+}
+
+\newglossaryentry{Comma delimiter}
+{
+    name=Comma delimiter,
+    description={Practice of using the ‘,’ character as a field separator to differentiate records in a file. Instances of a comma are always interpreted as a delimiter unless they appear in doubles quotes e.g. “1,0”}
+}
+
+\newglossaryentry{Serialization}
+{
+    name=Serialization,
+    description={The process of encoding data into a \texttt{.bsvx} byte stream}
+}
+
+\newglossaryentry{Deserialization}
+{
+    name=Deserialization,
+    description={The process of decoding a \texttt{.bsvx} byte stream into its original data}
+}
+
+\newglossaryentry{LibreOffice Calc}
+{
+    name=LibreOffice Calc,
+    description={An open-source application for manipulating spreadsheets. Developed and maintained by The Document Foundation}
+}
+
+\begin{document}
+
+\title{Binary Separated Value}
+\author{B. Bean, N. Mezher, J. Summers \& D. Toomey\\University of Massachusetts Lowell | Software Engineering II\\Prof. James Daly}
+\date{April 2020}
+\maketitle
+
+\section*{Motivation}
+
+The use of databases as a means for storing information has become ubiquitous in every field concerning data.
+One of the most common methods for analyzing sets of data from databases is to export it to a \texttt{.csv} (comma separated value) file format in order to manipulate the data via a spreadsheet program or language libraries.
+But despite all its draws, the \texttt{.csv} format has some significant drawbacks as well.
+The format is too bulky and inefficient for many applications, and it relies on a comma delimiter to separate data which can be problematic \cite{Coleman2011}.
+Our improvements upon the \texttt{.csv} format allow for users and programs to more efficiently store and utilize complex data.
+The end goal is to expedite communication between programs and disparate systems.
+
+\indent{}
+This document first outlines a new file format termed Binary Separated Value (BSVX), with the file extension \texttt{.bsvx}.
+This is not to be confused with the \texttt{.bsv} file format, which is a BASIC BSave Graphics file.
+The tailing \texttt{x} was chosen for convenience as it makes the name of our format, \texttt{.bsvx}, wholly unique.
+This format of data is delimited with byte markers which begin each field telling the library what kind of data is in the field and how long it is.
+We believed that through using byte markers, instead of plaintext character delimiters, a key issue with the \texttt{.csv} format---commas prematurely ending string fields---would be solved.
+The Binary Separated Value format is processed through a proprietary Python library called \textsc{bsvxpy}.
+
+\section*{BSVX File Format Specification}
+
+Each \texttt{.bsvx} file contains a series of rows of headers or records.
+Each row begins with a byte marker denoting the type (i.e. header or record) and the number of fields within that row.
+Following the first byte marker of a row is a series of fields, each made up of two parts: a byte marker denoting the type and size of the data stored within the field, and the data itself.
+Some initial markers indicate that the size of the data is given in subsequent bytes.
+Once the length \textit{n} is determined, those \textit{n} bytes can be interpreted to match the field byte marker.
+Each row does not have to be the same length, the data can be jagged and parsers read as much data as is denoted by the first byte marker of each row. 
+
+\indent{}
+At any time, the parser knows how many bytes it needs to read.
+There is never an instance where the parser needs to read bytes until it sees a particular character (as opposed to \texttt{.csv} or \texttt{.tsv} parsers, which look for commas or tabs respectively).
+Strings need neither end marks nor escape characters, and are stored in the UTF-8 format.
+The byte marker for strings denotes the number of bytes read, not the number of characters of the string itself.
+All numbers are stored in little endian order.
+
+\indent{}
+An abstract example of a \texttt{.bsvx} file row (header or record) looks like this:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+& The quick brown fox... dog & The quick brown fox... dog & 0 & 16 & 3.141900062561035 \\
+blank & str & str & int & int & float \\ \hline
+\end{tabular}
+\caption{An example of a \texttt{.bsvx} file row.}
+\label{tab:bsvxApproach_example}
+\end{table}
+
+\indent{}
+The same example of a \texttt{.bsvx} file row (header or record) but represented in hexadecimal:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|c|}
+\hline
+0x00 & 0x2C & 0x5468652071756...920646f67 & 0x88 & 0x90 & 0x20 & 0x0994 & 0x99 & 0x404914E4 \\
+Blank & str &  str_val & short_int & long_int & long_int_encoding & Float & float_value & float_dec  \\ \hline
+\end{tabular}
+\caption{An example of a \texttt{.bsvx} file row in hex values.}
+\label{tab:bsvxApproach_example in hexadecimal}
+\end{table}
+
+\indent{}
+The following table displays the implementation for each type of supported data in its own class.
+Bit ranges for each field are also provided; they are denoted by values ranging from 0 to 255.
+The first column gives the parser crucial context: what type of data follows the byte marker, and further, which \textit{variant} on that type it is.
+For example, the short integer type is represented by numbers in the range 136-143. 
+A 2 byte short integer is indicated by 138, 139 indicates a 3 byte integer, 140 indicates a 4 byte integer, etc.
+The second column illustrates how the range of values for a given type is affected by the magnitude of its offset.
+I.e. for a short integer, the second column entry is 136 + [0, 7].
+The third column establishes the types of data that are supported, and the fourth column provides a brief description of each.
+
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{|c|c|c|l|}
+\hline
+\textbf{Range} & \textbf{Form} & \textbf{Name} & \textbf{Description} \\ \hline
+0 &  & Blank & Possible implementation: NULL or ‘empty string’ \\ \hline
+1-127 & 1-127 & Short str & UTF-8 Encoded string of byte length 1-127 \\ \hline
+128-135 & 128 + {[}0,7{]} & Long str & 1-8 bytes giving the length of a str, followed by said str \\ \hline
+136-143 & 136 + {[}0,7{]} & Short int & An integer in the range of 0-7 bytes \\ \hline
+144-151 & 144 + {[}0,7{]} & Long int & A zig-zag encoded integer using 1-8 bytes \\ \hline
+152-159 & 152 + {[}0,7{]} & Float & IEEE-754 format float: 0 = half precision, 1 = single, 2 = double, 3 = triple \\ \hline
+160-167 & 160 + {[}0,7{]} & Blob & 1-8 bytes giving the length of binary data in bytes, followed by said data \\ \hline
+168-183 & 168 + {[}0,15{]} & Header & Beginning of header with 0-15 fields \\ \hline
+184-191 & 184 + {[}0,7{]} & Long header & 1-8 bytes giving the number of fields in the header \\ \hline
+192-207 & 192 + {[}0,15{]} & Record & Beginning of record with 0-15 fields \\ \hline
+208-215 & 208 + {[}0,7{]} & Long record & 1-8 bytes giving the number of fields in the record \\ \hline
+216-255 &  & Reserved & For future use \\ \hline
+\end{tabular}%
+}
+\caption{Data types supported by the BSVX file format specification.}
+\label{tab:bsvxApproach_dataTypes}
+\end{table}
+
+\section*{Implementation}
+
+As a generality, our Python library is similar to the \texttt{.csv} Python library.
+A writer function is passed a series of fields representing a header row. 
+Subsequent binary values are decoded based on the corresponding type casts provided by the header.
+The library then extracts each of the fields from the dictionary object and outputs them in sequential order.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/bsvxpy.png}
+\caption{UML diagram outlining the classes and statstructures used in \textsc{bsvxpy}}
+\label{fig:bsvxpy_architecture}
+\end{figure}
+
+\indent{}
+A novel problem with a strongly typed encoding is the inability to handle undefined data types such as graphs or algorithms that are often used in spreadsheet applications.
+To solve this, the \texttt{.bsvx} file format manages unknown data types with a catch-all data type---Blob---which acts as a polymorphic object.
+These Blobs store raw binary data imported from spreadsheets or \texttt{.csv} files.
+By relying on the raw binary for unknown data types, \textsc{bsvxpy} can accommodate proprietary encodings associated with any third party application.
+As a note, this introduces the risk of \texttt{.bsvx} files being limited to one spreadsheet application when using Blob data types.
+This is because third party applications may use internal encodings which are unknown to other programs.
+
+\indent{}
+The current implementation of \textsc{bsvxpy} includes interface classes to hold data, as well as providing the user with the ability to read and write using files.
+The \texttt{Reader} class is designed to take in any \texttt{.bsvx} file and create a map of \textsc{bsvxpy} classes for the user to operate with.
+This is done by reading in the hexadecimal (hex) text of a \texttt{.bsvx} file and iterating through the data, creating classes as it traverses.
+When the file is first opened, the class reads in the first two hex characters on the first line to know how many fields to read in.
+A loop is then called to iterate over \texttt{i} columns of data.
+Each record contains hex values telling the \texttt{Reader} what class it is.
+\texttt{Reader} then creates a \texttt{bsvxDataType} class for the corresponding type by passing in the hex representation of the data to the class’ constructor.
+Once the class is instantiated, it is appended to a map containing the string representation of the data as well as the class itself.
+
+\indent{}
+\texttt{Writer} is a class designed to write any \texttt{bsvxDataType} object to a file.
+Its implementation is simple, and is mostly handled by the \texttt{bsvxDataType} subclasses.
+Each subclass contains its own unique \texttt{write()} function, which is implemented differently depending on how the data is formatted.
+Each class you pass to \texttt{Writer}’s \texttt{writerow()} function will be written to the file in that order. 
+
+\section*{Development}
+
+In developing the \textsc{bsvxpy} Python library, the BSVX team took a number of precautions.
+At the highest level, the project was split into two different repositories on GitHub, so that BSVX's components and documentation were entirely separate.
+The \href{https://github.com/bsvx/bsvxpy}{\textsc{bsvxpy} repository} holds the \textsc{bsvxpy} Python library.
+And the \href{https://github.com/bsvx/docs}{\textsc{docs} repository} contains efforts related to this document and generating the results shown later in this document.
+
+\indent{}
+To further isolate BSVX, the development of the \textsc{bsvxpy} Python library required the use of a Python virtual environment.
+This ensured that the end user did not install the incomplete module on their default Python environment.
+Specifics regarding the initialization and launch of a Python virtual environment, within the context of this project, can be found in the README portion of the \href{https://github.com/bsvx/bsvxpy}{\textsc{bsvxpy} repository}.
+
+\indent{}
+Ensuring correctness, to the best of the BSVX developers, Travis-CI was utilized.
+Travis-CI allows for integration with GitHub repositories, and helped to automatically test BSVX's components.
+As for the tests themselves, the \textsc{pytest} package was utilized.
+The \textsc{pytest} package allowed the BSVX developers to easily and quickly construct unit and systems tests for the \textsc{bsvxpy} Python library.
+Different testing files were associated for each data type supported by the BSVX file format specification so that each component's functionality could be tested separated if needed.
+If all tests that were tested---typically all tests created---passed, Travis-CI would assign the repository a passing mark.
+Failing Travis-CI marks enabled BSVX developers to retroactively fix problems with some context as to where they happened.
+This continuous integration process made development safe and incremental.
+
+\indent{}
+Example \texttt{.bsvx} files were created to accurately account for testing basic functionality as well as edge cases.
+Initial builds emphasized basic functionality, such as correctly reading and writing basic data types.
+Blob types were handled after initial testing was completed.
+In every step of the process, the BSVX developers attempted to optimize memory and computational efficiency to improve performance outcomes.
+
+\section*{Results and Discussion}
+
+\indent{}
+We anticipated a user with minimal data file experience being able to perform \texttt{.bsvx} file conversions without loss of data or corruption of its ordering.
+While the later part of the above statement proved true, users must actually have sufficient familiarity with \texttt{.csv} or other data file types to integrate \textsc{bsvxpy} effectively.
+This is because the \textsc{bsvxpy} module is partially imcomplete and requires some manual data manipulation for writing to \texttt{.bsvx} files. 
+The format does however maintain a capacity for the full integrity of its input data.
+
+\indent{}
+Dealing with undiscovered ambiguities in the format specification was a problem bigger than we initially antipated.
+These ambiguities were dealt with through tightening the specification and updating reference implementation.
+Parsing \texttt{.csv} files for conversion to \texttt{.bsvx} files, and vice-versa, involved numerous pitfalls.
+While there was an agreed upon standard format for \texttt{.csv} files, it didn’t come about until 2005 and many \texttt{.csv} files still did not conform to it strictly.
+This complicated our attempt to ensure integrity and continuity between conversions for \textit{all} \texttt{.csv} and \texttt{.bsvx} files.
+For instance, when converting a \texttt{.bsvx} file consisting of several strings of comma characters, our library had to ensure that none of the commas ended up being misinterpreted as delimiters.
+Properly following the specification ensured consistency and prevented this from happening, but rigorous testing with a myriad of files was necessary.
+
+\indent{}
+Another challenge fundamental to the \texttt{.bsvx} format was deciding how to handle Blob objects.
+It is not always clear what type of data a Blob should be deserialized as.
+We took the stance that the user should have context of the Blob's contents, so anything outside of the confines of the BSVX specification is not BSVX's responsibility.
+
+\indent{}
+An aspect we believed integral to BSVX was its compression of information.
+This was to be attained through storing fields in hexadecimal.
+To diagnose the successfulness of \textsc{bsvxpy}, we first decided to check if this goal was met.
+We started by creating \texttt{.csv} files of increasing sizes.
+Files predominantly filled with strings were chosen for comparison as the team knew that the BSVX file format specification left the most room for string types.
+Matching \texttt{.bsvx} files were generated for file size comparison.
+
+\indent{}
+What the team found surprised them.
+It turned out their initial hypothesis that the BSVX file format specification would save space, in comparison to the CSV file format, was incorrect.
+It was discovered that implementation resulted, on average, in \texttt{.bsvx} files twice as large as their \texttt{.csv} counter parts.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{scripts/figures/1.png}
+\caption{A graphic comparing files sizes between equivalent \texttt{.csv} and \texttt{.bsvx} files.}
+\label{fig:results_1}
+\end{figure}
+
+\indent{}
+Worth mentioning again, is that these results represented a worst case scenario, as the BSVX file format specification anticipates strings of significant length.
+
+\indent{}
+But while BSVX failed in the fize size regard, it succeeded in solving an error fundamental to \texttt{.csv} files.
+BSVX sought to solve the limitations of the comma delimiter and did.
+Similarly, \texttt{.csv} and \texttt{.bsvx} files were manually generated, and consisting mostly of strings.
+Displayed below is a graph of expected versus actual fields for equivalent \texttt{.csv} and \texttt{.bsvx} files.
+\texttt{.bsvx} files match the expected number of fields, whereas \texttt{.csv} files decidedly do not.
+In fact, \texttt{.csv} files develop an increasingly larger margin of error with larger file sizes.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{scripts/figures/2.png}
+\caption{A graphic comparing field counts between equivalent \texttt{.csv} and \texttt{.bsvx} files.}
+\label{fig:results_2}
+\end{figure}
+
+\indent{}
+File A represents a file with zero expected comma delimiter issues and as can be seen, both \texttt{.csv} and \texttt{.bsvx} files have an equal number of fields.
+But with files with a larger number of commas, the issue with the CSV standard becomes more pronounced.
+These errors could represent substantial problems in production environments.
+The BSVX file format specification, although more weighty, does its expected job of resolving comma delimiter issues.
+
+\indent{}
+Bash scripts were created to generate these key figures.
+These scripts take advantage of Python's comprehensive mathematics library \textsc{numpy} to aid with data collection.
+Figure generation is handled through the \textsc{matplotlib} Python library.
+The master script for figure generation script can be found in the scripts folder of our \href{https://github.com/bsvx/docs}{\texttt{docs} repository} along with usage instructions in the form of a README.
+We offer this means of figure self-generation such that it is clear and self-provable that all figures in this document are fair.
+
+\indent{}
+Originally the BSVX team had planned on producing two deliverables.
+One was a new Python library able to read and write \texttt{.bsvx} files, according to the BSVX file format specification, and with the same functionality set as the Python CSV library.
+The second was a LibreOffice Calc extension, able to read \texttt{.bsvx} file data to and from LibreOffice Calc spreadsheets.
+
+\indent{}
+However, the BSVX team---like most everyone else---did not foresee the COVID-19 pandemic. 
+With the pandemic's timing, the team was forced to change their implementation plans.
+The team decided to not pursue development of the BSVX LibreOffice Calc Extension.
+They believed it best to both limit the scope of the project to maintain a standard of code, and to diverge resources towards the \textsc{bsvxpy} Python library.
+
+\indent{}
+All of this was said to provide some context to the development of the BSVX LibreOffice Calc Extension.
+While not entirely necessary, the BSVX team hoped these remarks clarified the upcoming section's size.
+What follows is an outline for the implementation of a LibreOffice Calc extension for BSVX.
+Such resources remain freely open for development.
+
+\section*{Future Work}
+
+Further iterations of \textsc{bsvxpy} would emphasize compactness.
+As it stands, the specification provides ample room for a number of data types.
+The specification need be refined if it is to have less of a footprint.
+Strings are one area where this issue is glaringly obvious.
+
+
+\indent{}
+One drawback of implementation through a Python library is the inability to easily parse and edit \texttt{.bsvx} files through a text editor.
+However, this issue is remedied through our proposed BSVX LibreOffice Calc Extension.
+\href{https://www.libreoffice.org/discover/libreoffice/}{LibreOffice} is a free to use, open-source file editing platform similar to Microsoft Office.
+\href{https://www.libreoffice.org/discover/calc/}{LibreOffice Calc} is a program provided in the LibreOffice suite, and provides similar functionality to Microsoft’s Excel program \cite{Guthrie2012}.
+The BSVX LibreOffice Calc Extension would give LibreOffice Calc users the ability to read data from \texttt{.bsvx} files and export their spreadsheets to \texttt{.bsvx} files.
+Users would also have the ability to import, then convert \texttt{.csv} files into \texttt{.bsvx} files through the BSVX LibreOffice Calc Extension. The BSVX LibreOffice Calc Extension should be capable of ultimately converting between \texttt{.csv} and \texttt{.bsvx} files without loss or adulteration of information.
+
+\indent{}
+To illustrate the top-most point for user interaction with the BSVX LibreOffice Calc Extension, there is included a series of figures below. 
+\autoref{fig:deliverables_mockupPart1} displays the default toolbar packaged with LibreOffice Calc.
+\autoref{fig:deliverables_mockupPart2} contrasts the differences between the default toolbar and a toolbar with the BSVX LibreOffice Calc Extension enabled.
+It can be seen that only two features are to-be added, in the form of two buttons.
+The proposed left button allows for importing, reading from, a \texttt{.bsvx} file and the proposed right button for exporting, saving to, a \texttt{.bsvx} file.
+Finally, \autoref{fig:deliverables_mockupPart3} provides a glance as to how the toolbar would look with the BSVX LibreOffice Calc Extension enabled.
+
+\indent{}
+The LibreOffice Calc project allows developers to create extensions using Python, which would let us extend LibreOffice Calc’s functionality to include \texttt{.bsvx} file format support using our \textsc{bsvxpy} Python library.
+We would also use the \textsc{uno} Python library, as it is necessary for any LibreOffice Calc extension development.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/mockupPart1.png}
+\caption{LibreOffice Calc's toolbar.}
+\label{fig:deliverables_mockupPart1}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=4in]{figures/mockupPart2.png}
+\caption{The BSVX LibreOffice Calc Extension would provide two additional buttons for importing and exporting.}
+\label{fig:deliverables_mockupPart2}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/mockupPart3.png}
+\caption{A mockup of LibreOffice Calc's toolbar with the BSVX LibreOffice Calc Extension enabled.}
+\label{fig:deliverables_mockupPart3}
+\end{figure}
+
+\indent{}
+To export data to a \texttt{.bsvx} file, the BSVX LibreOffice Calc Extension would call functions from the \textsc{uno} Python library to read cell data from LibreOffice Calc.
+The \textsc{bsvxpy} Python library would then be used to convert that data into binary separated values.
+Once the data is appropriately converted, it would be written to a file with the extension \texttt{.bsvx} and as named by the user.
+\autoref{fig:deliverables_dataToBsvx} depicts the data flow for the exporting feature.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{figures/dataToBsvx.png}
+\caption{Scope of API and library calls for the BSVX LibreOffice Calc Extension in exporting data to a \texttt{.bsvx} file.}
+\label{fig:deliverables_dataToBsvx}
+\end{figure}
+
+\indent{}
+The importing feature would work the same way, but in reverse.
+The user would select a \texttt{.bsvx} file to import data from, and the BSVX LibreOffice Calc Extension would read data from that file, using \textsc{bsvxpy} and \textsc{uno} to translate it from binary separated value data to cell data that LibreOffice Calc can read.
+The data flow for the importing feature is represented by \autoref{fig:deliverables_bsvxToData}.
+    
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{figures/bsvxToData.png}
+\caption{Scope of API and library calls for the BSVX LibreOffice Calc Extension in importing data from a \texttt{.bsvx} file.}
+\label{fig:deliverables_bsvxToData}
+\end{figure}
+
+\indent{}
+This functionality would also allow the user to convert from \texttt{.csv} to \texttt{.bsvx}.
+If the user chose to import a \texttt{.csv} file into LibreOffice Calc, and export that file to a \texttt{.bsvx} file, that same data would become available in both files.
+Likewise, if the user chose to import a \texttt{.bsvx} file and export that file to a \texttt{.csv} file, that same data would become available.
+These changes would not significantly affect the overall architecture of LibreOffice Calc.
+The same base functionality of LibreOffice Calc would still be provided to the user once this extension was installed, just with the addition of importing and exporting features for the \texttt{.bsvx} format.
+
+\indent{}
+As a last note and concerning the prior discussed blob types, LibreOffice Calc may contain methods to interpret unknown fields upon reading the file, but more research on this is necessary.
+
+\clearpage
+\glsadd{Binary Separated Value}
+\glsadd{.bsvx}
+\glsadd{.csv}
+\glsadd{.tsv}
+\glsadd{Comma delimiter}
+\glsadd{Serialization}
+\glsadd{Deserialization}
+\glsadd{LibreOffice Calc}
+\printnoidxglossary[nonumberlist]
+
+\clearpage
+\begin{thebibliography}{9}
+
+  \bibitem{Coleman2011}
+    Coleman, Larry.
+    "Why do we keep using CSV?"
+    Software Engineering Stack Exchange,
+    14 Feb. 2011.
+    \url{https://softwareengineering.stackexchange.com/questions/47838/why-do-we-keep-using-csv}
+
+  \bibitem{"CSV File Reading and Writing"2020}
+    “CSV File Reading and Writing.”
+    Python Docs,
+    12 Feb. 2020.
+    \url{https://docs.python.org/3/library/csv.html}
+
+  \bibitem{DalyMeiners2020}
+    Daly, James and Meiners, Chad.
+    “Binary Separated Value.”
+    UMass Lowell,
+    30 Jan. 2020.
+
+  \bibitem{Guthrie2012}
+    Guthrie, Gordon.
+    “How to Work With LibreOffice Calc.”
+    TechRadar,
+    23 July 2012.
+    \url{https://www.techradar.com/news/world-of-tech/roundup/how-to-work-with-libreoffice-calc-1089870}
+  
+\end{thebibliography}
+
+\end{document}
